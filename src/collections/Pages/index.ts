@@ -6,7 +6,7 @@ import { Archive } from '../../blocks/ArchiveBlock/config'
 import { CallToAction } from '../../blocks/CallToAction/config'
 import { Content } from '../../blocks/Content/config'
 import { Example } from '../../blocks/Example/config'
-import { TableBlock } from '../../blocks/TableBlock/config';
+import { TableBlock } from '../../blocks/TableBlock/config'
 import { FormBlock } from '../../blocks/Form/config'
 import { MediaBlock } from '../../blocks/MediaBlock/config'
 import { hero } from '@/heros/config'

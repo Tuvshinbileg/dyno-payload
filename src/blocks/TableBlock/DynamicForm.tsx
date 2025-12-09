@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { useForm } from 'react-hook-form'
@@ -34,8 +34,9 @@ export function DynamicForm({
   onSubmit,
   isSubmitting,
 }: DynamicFormProps) {
-  const form = useForm({
-    defaultValues: initialData || {},
+  const form = useForm<Record<string, unknown>>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultValues: (initialData || {}) as any,
   })
 
   const handleSubmit = async (data: Record<string, unknown>) => {
@@ -44,12 +45,16 @@ export function DynamicForm({
     onOpenChange(false)
   }
 
-  // Filter out primary key, auto-increment, and system columns
+  // Filter out primary key, auto-increment, system columns, and relational columns
   const systemColumns = ['nc_created_by', 'nc_updated_by', 'CreatedAt', 'UpdatedAt']
+  const relationalTypes = ['LinkToAnotherRecord', 'Lookup', 'Rollup', 'Formula', 'Links']
+
   const editableColumns = columns.filter((col) => {
     // Exclude PK, AI, and system columns
     if (col.pk || col.ai) return false
     if (systemColumns.includes(col.column_name) || systemColumns.includes(col.title)) return false
+    // Exclude relational and computed columns
+    if (relationalTypes.includes(col.uidt)) return false
     return true
   })
 

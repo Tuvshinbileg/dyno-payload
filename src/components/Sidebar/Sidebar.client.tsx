@@ -34,7 +34,7 @@ export const SidebarClient: React.FC<SidebarClientProps> = ({ pages }) => {
   return (
     <Sidebar collapsible="offcanvas" className="border-r shadow-sm bg-background">
       <SidebarHeader className="border-b bg-background/95 sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-background/95 h-16">
-        <div className="px-4 py-bg-gradient-to-b from-muted/50 to-transparent">
+        <div className="px-4 py-2 bg-gradient-to-b from-muted/50 to-transparent">
           <div className="flex items-center gap-2 mb-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
               <Layers className="h-4 w-4" />
@@ -61,30 +61,20 @@ export const SidebarClient: React.FC<SidebarClientProps> = ({ pages }) => {
 
                 return (
                   <SidebarMenuItem key={page.id}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={isActive}
+                      tooltip={page.title}
                       className={cn(
-                        "relative group/item transition-all duration-200 bg-transparent",
-                        "hover:bg-accent",
-                        isActive && "bg-accent font-medium shadow-sm"
+                        'relative group/item transition-all duration-200 bg-transparent',
+                        'hover:bg-accent',
+                        isActive && 'bg-accent font-medium shadow-sm',
                       )}
                     >
                       <Link href={href} className="flex items-center gap-3 py-2.5">
-                        <div className={cn(
-                          "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
-                          isActive ? "bg-primary/10 text-primary" : "bg-muted/50 text-muted-foreground group-hover/item:bg-accent group-hover/item:text-foreground"
-                        )}>
-                          {isHome ? (
-                            <Home className="h-4 w-4" />
-                          ) : (
-                            <FileText className="h-4 w-4" />
-                          )}
-                        </div>
+                        {isHome ? <Home className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                         <span className="flex-1 truncate">{page.title}</span>
-                        {isActive && (
-                          <ChevronRight className="h-4 w-4 text-primary" />
-                        )}
+                        {isActive && <ChevronRight className="h-4 w-4 text-primary" />}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

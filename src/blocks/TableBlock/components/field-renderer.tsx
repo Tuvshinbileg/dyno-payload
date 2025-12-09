@@ -1,28 +1,32 @@
-"use client";
+'use client'
 
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker";
-import { DateTimePicker } from "@/components/ui/datetime-picker";
-import type { NocoDBColumn } from "@/services/nocodb";
-import { Upload, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DatePicker } from '@/components/ui/date-picker'
+import { DateTimePicker } from '@/components/ui/datetime-picker'
+import type { NocoDBColumn } from '@/services/nocodb'
+import { Upload, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 
 interface FieldRendererProps {
-  column: NocoDBColumn;
-  value: string;
-  onChange: (value: string) => void;
+  column: NocoDBColumn
+  value: string
+  onChange: (value: string) => void
 }
 
 export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
-  const { uidt, title, column_name } = column;
+  const { uidt, title, column_name } = column
   const commonProps = {
     id: `field-${column_name}`,
     placeholder: `Enter ${title}`,
-  };
+  }
+
+  // Safely convert value to string, handling objects and arrays
+  const safeValue =
+    typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? '')
 
   // Map NocoDB UI Data Types to appropriate input components
   switch (uidt) {
@@ -31,12 +35,12 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
       return (
         <Textarea
           {...commonProps}
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
           rows={4}
           className="resize-y"
         />
-      );
+      )
 
     case 'Checkbox':
       return (
@@ -50,35 +54,23 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
             {title}
           </Label>
         </div>
-      );
+      )
 
     case 'Date':
-      return (
-        <DatePicker
-          value={value}
-          onChange={onChange}
-          placeholder={`Select ${title}`}
-        />
-      );
+      return <DatePicker value={value} onChange={onChange} placeholder={`Select ${title}`} />
 
     case 'DateTime':
-      return (
-        <DateTimePicker
-          value={value}
-          onChange={onChange}
-          placeholder={`Select ${title}`}
-        />
-      );
+      return <DateTimePicker value={value} onChange={onChange} placeholder={`Select ${title}`} />
 
     case 'Time':
       return (
         <Input
           {...commonProps}
           type="time"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'Number':
     case 'Decimal':
@@ -89,51 +81,51 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
           {...commonProps}
           type="number"
           step={uidt === 'Decimal' || uidt === 'Currency' || uidt === 'Percent' ? '0.01' : '1'}
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'Email':
       return (
         <Input
           {...commonProps}
           type="email"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'URL':
       return (
         <Input
           {...commonProps}
           type="url"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'PhoneNumber':
       return (
         <Input
           {...commonProps}
           type="tel"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'SingleSelect':
       return (
         <Input
           {...commonProps}
           type="text"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
           placeholder={`Select ${title}`}
         />
-      );
+      )
 
     case 'Rating':
       return (
@@ -143,10 +135,10 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
           min="0"
           max="5"
           step="1"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'Duration':
       return (
@@ -154,13 +146,13 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
           {...commonProps}
           type="number"
           placeholder="Duration in seconds"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
 
     case 'Attachment':
-      return <AttachmentField {...commonProps} value={value} onChange={onChange} />;
+      return <AttachmentField {...commonProps} value={value} onChange={onChange} />
 
     case 'SingleLineText':
     case 'Text':
@@ -169,10 +161,10 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
         <Input
           {...commonProps}
           type="text"
-          value={value}
+          value={safeValue}
           onChange={(e) => onChange(e.target.value)}
         />
-      );
+      )
   }
 }
 
@@ -182,60 +174,62 @@ function AttachmentField({
   value,
   onChange,
 }: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
+  id: string
+  value: string
+  onChange: (value: string) => void
 }) {
-  const [fileName, setFileName] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
+  const [fileName, setFileName] = useState<string>('')
+  const [isUploading, setIsUploading] = useState(false)
 
   // Parse existing attachment value
-  const existingFile = value ? (() => {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null;
-    } catch {
-      return null;
-    }
-  })() : null;
+  const existingFile = value
+    ? (() => {
+        try {
+          const parsed = JSON.parse(value)
+          return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : null
+        } catch {
+          return null
+        }
+      })()
+    : null
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]
+    if (!file) return
 
-    setIsUploading(true);
-    setFileName(file.name);
+    setIsUploading(true)
+    setFileName(file.name)
 
     try {
       // Convert file to base64 for simple storage
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        const base64String = reader.result as string;
+        const base64String = reader.result as string
         const attachmentData = {
           title: file.name,
           mimetype: file.type,
           size: file.size,
           data: base64String,
-        };
-        onChange(JSON.stringify([attachmentData]));
-        setIsUploading(false);
-      };
+        }
+        onChange(JSON.stringify([attachmentData]))
+        setIsUploading(false)
+      }
       reader.onerror = () => {
-        setIsUploading(false);
-        setFileName("");
-      };
-      reader.readAsDataURL(file);
+        setIsUploading(false)
+        setFileName('')
+      }
+      reader.readAsDataURL(file)
     } catch (error) {
-      console.error("Error uploading file:", error);
-      setIsUploading(false);
-      setFileName("");
+      console.error('Error uploading file:', error)
+      setIsUploading(false)
+      setFileName('')
     }
-  };
+  }
 
   const handleRemove = () => {
-    onChange("");
-    setFileName("");
-  };
+    onChange('')
+    setFileName('')
+  }
 
   return (
     <div className="space-y-2">
@@ -271,9 +265,7 @@ function AttachmentField({
           <Upload className="h-4 w-4 text-muted-foreground" />
         </div>
       )}
-      {isUploading && (
-        <p className="text-xs text-muted-foreground">Uploading...</p>
-      )}
+      {isUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
     </div>
-  );
+  )
 }

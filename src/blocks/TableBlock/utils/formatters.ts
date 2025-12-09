@@ -32,14 +32,14 @@ export function formatCellValue(value: unknown, column: NocoDBColumn): string {
  */
 export function getVisibleColumns(columns: NocoDBColumn[]): NocoDBColumn[] {
   const systemColumns = ['created_at', 'updated_at', 'nc_created_by', 'nc_updated_by', 'nc_order']
-  
+
   return columns.filter((col) => {
-    const columnName = col.column_name.toLowerCase()
-    
+    const columnName = col.column_name?.toLowerCase()
+
     if (systemColumns.includes(columnName)) {
       return false
     }
-    
+
     return true
   })
 }

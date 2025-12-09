@@ -36,11 +36,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             }}
           />
 
-          <SidebarProvider>
+          <SidebarProvider defaultOpen={true}>
             <Sidebar />
-            <SidebarInset className="flex flex-col">
+            <SidebarInset className="flex flex-col transition-[margin] duration-200 ease-linear md:ml-[var(--sidebar-width)] peer-data-[state=collapsed]:md:ml-0">
               <Header />
-              <main className="flex-1 container py-6 md:py-8">{children}</main>
+              <main className="flex-1">{children}</main>
               <Footer />
             </SidebarInset>
           </SidebarProvider>
