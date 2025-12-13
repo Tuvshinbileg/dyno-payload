@@ -49,13 +49,15 @@ export const TableBlock: React.FC<Props> = async ({ source }) => {
       NocoDBService.getRows(baseId, tableId, { limit: 100 }),
     ])
 
-    const columns  = tableMetaData?.columns
+    const columns = tableMetaData?.columns
 
     if (!columns || columns.length === 0) {
       return (
         <div className="container py-8">
           <div className="bg-card rounded border-border border p-6">
-            <p className="text-destructive">Error: No columns found for table &ldquo;{table.title}&rdquo;</p>
+            <p className="text-destructive">
+              Error: No columns found for table &ldquo;{table.title}&rdquo;
+            </p>
           </div>
         </div>
       )
@@ -73,7 +75,11 @@ export const TableBlock: React.FC<Props> = async ({ source }) => {
               <p className="text-sm text-muted-foreground">Table: {table.table_name}</p>
             )}
           </div>
-          <DataTable source={dataSource} columns={getVisibleColumns(columns)} initialRows={rowsData.list || []} />
+          <DataTable
+            source={dataSource}
+            columns={getVisibleColumns(columns)}
+            initialRows={rowsData.list || []}
+          />
         </div>
       </div>
     )
@@ -94,4 +100,3 @@ export const TableBlock: React.FC<Props> = async ({ source }) => {
     )
   }
 }
-

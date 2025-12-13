@@ -20,9 +20,9 @@ console.log('[NocoDB] API client initialized successfully')
 export interface NocoDBColumn {
   id: string
   title: string
-  column_name: string
+  column_name?: string | null
   uidt: string // UI Data Type
-  dt?: string // Data Type
+  dt?: string | null // Data Type
   pk?: boolean
   rqd?: boolean // Required
   unique?: boolean
@@ -31,6 +31,21 @@ export interface NocoDBColumn {
   dtxp?: string // Data Type Extra Params
   dtxs?: string // Data Type Extra Scale
   description?: string
+  source_id?: string
+  base_id?: string
+  fk_model_id?: string // Foreign key model ID for relational fields
+  np?: string | null
+  ns?: string | null
+  colOptions?: {
+    fk_related_model_id?: string
+    fk_mm_model_id?: string
+    fk_mm_child_column_id?: string
+    fk_mm_parent_column_id?: string
+    fk_parent_column_id?: string
+    fk_child_column_id?: string
+    type?: string // 'has_one' | 'has_many' | 'many_to_many'
+    fk_label_column_id?: string // Column to use as display label
+  }
 }
 
 export interface NocoDBRow {
@@ -156,15 +171,14 @@ export class NocoDBService {
     }
   }
 
-
-   // Get table metadata
+  // Get table metadata
   static async getTableMetadata(tableId: string): Promise<NocoDBTable | null> {
     try {
-      const response = await nocodbApi.dbTable.read(tableId);
-      return response as NocoDBTable;
+      const response = await nocodbApi.dbTable.read(tableId)
+      return response as NocoDBTable
     } catch (error) {
-      console.error('Error fetching table metadata:', error);
-      return null;
+      console.error('Error fetching table metadata:', error)
+      return null
     }
   }
 
@@ -250,7 +264,9 @@ export class NocoDBService {
   static getVisibleColumns(columns: NocoDBColumn[]): NocoDBColumn[] {
     // Filter out common system columns like CreatedAt, UpdatedAt, etc.
     const systemColumns = ['created_at', 'updated_at', 'created_by', 'updated_by']
-    return columns.filter((col) => !systemColumns.includes(col.column_name.toLowerCase()))
+    return columns.filter(
+      (col) => !col.column_name || !systemColumns.includes(col.column_name.toLowerCase()),
+    )
   }
 
   /**
@@ -301,6 +317,29 @@ export class NocoDBService {
       return false
     }
     return true
+  }
+
+  /**
+   * Fetch related records for a relational field
+   */
+  static async getRelatedRecords(
+    baseId: string,
+    relatedTableId: string,
+    options?: {
+      limit?: number
+      offset?: number
+    },
+  ): Promise<NocoDBRow[]> {
+    try {
+      const response = await nocodbApi.dbTableRow.list('noco', baseId, relatedTableId, {
+        limit: options?.limit || 100,
+        offset: options?.offset || 0,
+      })
+      return (response.list || []) as NocoDBRow[]
+    } catch (error) {
+      console.error('Error fetching related records:', error)
+      throw new Error(`Failed to fetch related records from table ${relatedTableId}`)
+    }
   }
 }
 

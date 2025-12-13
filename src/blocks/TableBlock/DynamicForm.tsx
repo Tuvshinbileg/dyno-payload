@@ -45,25 +45,39 @@ export function DynamicForm({
     onOpenChange(false)
   }
 
-  // Filter out primary key, auto-increment, system columns, and relational columns
+  // Filter out primary key, auto-increment, and system columns
+  // Keep relational fields (LinkToAnotherRecord) but exclude other computed types
   const systemColumns = ['nc_created_by', 'nc_updated_by', 'CreatedAt', 'UpdatedAt']
-  const relationalTypes = ['LinkToAnotherRecord', 'Lookup', 'Rollup', 'Formula', 'Links']
+  const computedTypes = ['Lookup', 'Rollup', 'Formula', 'Links', 'Count']
 
   const editableColumns = columns.filter((col) => {
     // Exclude PK, AI, and system columns
     if (col.pk || col.ai) return false
-    if (systemColumns.includes(col.column_name) || systemColumns.includes(col.title)) return false
-    // Exclude relational and computed columns
-    if (relationalTypes.includes(col.uidt)) return false
+    if (
+      (col.column_name && systemColumns.includes(col.column_name)) ||
+      (col.title && systemColumns.includes(col.title))
+    )
+      return false
+    // Exclude computed columns but keep relational fields
+    if (computedTypes.includes(col.uidt)) return false
     return true
   })
 
   const renderField = (column: NocoDBColumn) => {
+    // For relational fields, use title as the name since column_name is null
+    const fieldName = column.column_name || column.title
+
+    // Skip rendering if we can't determine a field name
+    if (!fieldName) {
+      console.warn('Column missing both column_name and title:', column)
+      return null
+    }
+
     return (
       <FormField
         key={column.id}
         control={form.control}
-        name={column.column_name}
+        name={fieldName}
         rules={{
           required: column.rqd ? `${column.title} is required` : false,
         }}

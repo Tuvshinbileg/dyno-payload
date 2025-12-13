@@ -6,10 +6,18 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DatePicker } from '@/components/ui/date-picker'
 import { DateTimePicker } from '@/components/ui/datetime-picker'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import type { NocoDBColumn } from '@/services/nocodb'
+import { NocoDBService } from '@/services/nocodb'
 import { Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface FieldRendererProps {
   column: NocoDBColumn
@@ -154,6 +162,16 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
     case 'Attachment':
       return <AttachmentField {...commonProps} value={value} onChange={onChange} />
 
+    case 'LinkToAnotherRecord':
+      return (
+        <RelationalSelectField
+          column={column}
+          value={value}
+          onChange={onChange}
+          placeholder={`Select ${title}`}
+        />
+      )
+
     case 'SingleLineText':
     case 'Text':
     default:
@@ -266,6 +284,125 @@ function AttachmentField({
         </div>
       )}
       {isUploading && <p className="text-xs text-muted-foreground">Uploading...</p>}
+    </div>
+  )
+}
+
+// Relational select field component
+function RelationalSelectField({
+  column,
+  value,
+  onChange,
+  placeholder,
+}: {
+  column: NocoDBColumn
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+}) {
+  const [isLoading, setIsLoading] = useState(false)
+  const [relatedRows, setRelatedRows] = useState<Array<{ id: string; title: string }>>([])
+  const [error, setError] = useState<string | null>(null)
+
+  function getRelationFieldKey(col: NocoDBColumn): string | null {
+    if (col.column_name) return col.column_name
+
+    const type = col.colOptions?.type
+
+    if (['oo', 'bt'].includes(type)) {
+      return col.meta?.singular
+    }
+
+    if (['hm', 'mm'].includes(type)) {
+      return col.meta?.plural
+    }
+
+    return null
+  }
+
+  useEffect(() => {
+    const fetchRelatedData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        console.log('[RelationalSelect] Fetching related data for column:', JSON.stringify(column))
+        console.log('[RelationalSelect] Column options:', JSON.stringify(column.colOptions))
+
+        // Get relational model ID and base ID from column options
+        const relatedModelId = column.colOptions?.fk_related_model_id
+        const baseId = column.base_id
+
+        if (!relatedModelId || !baseId) {
+          console.warn('Missing relational field configuration:', {
+            relatedModelId,
+            baseId,
+            column,
+          })
+          setError('Related model not properly configured')
+          return
+        }
+
+        console.log('[RelationalSelect] Fetching related rows:', {
+          baseId,
+          relatedModelId,
+        })
+
+        // Fetch related records
+        const rows = await NocoDBService.getRelatedRecords(baseId, relatedModelId)
+
+        // Transform rows to { id, title } format
+        // Try to find a suitable display column (name, title, etc.)
+        const transformedRows = rows.map((row) => {
+          const id = row.id || row.Id || Object.values(row)[0]
+          // Try common display column names
+          const title =
+            (row.name as string) ||
+            (row.title as string) ||
+            (row.Name as string) ||
+            (row.Title as string) ||
+            String(id)
+
+          return {
+            id: String(id),
+            title: String(title),
+          }
+        })
+
+        setRelatedRows(transformedRows)
+      } catch (err) {
+        console.error('Error fetching related data:', err)
+        setError('Failed to load related records')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (column.uidt === 'LinkToAnotherRecord') {
+      fetchRelatedData()
+    }
+  }, [column])
+
+  return (
+    <div className="space-y-2">
+      <Select value={value || ''} onValueChange={onChange} disabled={isLoading}>
+        <SelectTrigger>
+          <SelectValue placeholder={isLoading ? 'Loading...' : placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {relatedRows.length > 0 ? (
+            relatedRows.map((row) => (
+              <SelectItem key={row.id} value={String(row.id)}>
+                {row.title}
+              </SelectItem>
+            ))
+          ) : (
+            <div className="p-2 text-sm text-muted-foreground text-center">
+              {isLoading ? 'Loading related records...' : 'No related records available'}
+            </div>
+          )}
+        </SelectContent>
+      </Select>
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   )
 }
