@@ -1,15 +1,11 @@
 import { Api } from 'nocodb-sdk'
+import ncHttpApi from '@/lib/http'
 
 // Initialize NocoDB SDK
 console.log('[NocoDB] Initializing with environment variables...')
-console.log('[NocoDB] NOCODB_URL:', process.env.NOCODB_URL || '(not set)')
-console.log(
-  '[NocoDB] NOCODB_API_TOKEN:',
-  process.env.NOCODB_API_TOKEN ? `${process.env.NOCODB_API_TOKEN.slice(0, 8)}...` : '(not set)',
-)
 
 const nocodbApi = new Api({
-  baseURL: process.env.NOCODB_URL,
+  baseURL: process.env.NEXT_PUBLIC_NOCODB_URL,
   headers: {
     'xc-token': process.env.NOCODB_API_TOKEN,
   },
@@ -36,7 +32,7 @@ export interface NocoDBColumn {
   fk_model_id?: string // Foreign key model ID for relational fields
   np?: string | null
   ns?: string | null
-  colOptions?: {
+  colOptions: {
     fk_related_model_id?: string
     fk_mm_model_id?: string
     fk_mm_child_column_id?: string
@@ -323,7 +319,6 @@ export class NocoDBService {
    * Fetch related records for a relational field
    */
   static async getRelatedRecords(
-    baseId: string,
     relatedTableId: string,
     options?: {
       limit?: number
@@ -331,11 +326,16 @@ export class NocoDBService {
     },
   ): Promise<NocoDBRow[]> {
     try {
-      const response = await nocodbApi.dbTableRow.list('noco', baseId, relatedTableId, {
-        limit: options?.limit || 100,
+      const _options = {
         offset: options?.offset || 0,
-      })
-      return (response.list || []) as NocoDBRow[]
+        limit: options?.limit || 100,
+      }
+
+      const response = await ncHttpApi.get(
+        `/api/v2/tables/${relatedTableId}/records?offset=${_options.offset}&limit=${_options.limit}`,
+      )
+
+      return (response.data.list || []) as NocoDBRow[]
     } catch (error) {
       console.error('Error fetching related records:', error)
       throw new Error(`Failed to fetch related records from table ${relatedTableId}`)

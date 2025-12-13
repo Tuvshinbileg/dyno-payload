@@ -163,10 +163,11 @@ export function FieldRenderer({ column, value, onChange }: FieldRendererProps) {
       return <AttachmentField {...commonProps} value={value} onChange={onChange} />
 
     case 'LinkToAnotherRecord':
+      console.log(value)
       return (
         <RelationalSelectField
           column={column}
-          value={value}
+          value={safeValue}
           onChange={onChange}
           placeholder={`Select ${title}`}
         />
@@ -304,51 +305,34 @@ function RelationalSelectField({
   const [relatedRows, setRelatedRows] = useState<Array<{ id: string; title: string }>>([])
   const [error, setError] = useState<string | null>(null)
 
-  function getRelationFieldKey(col: NocoDBColumn): string | null {
-    if (col.column_name) return col.column_name
-
-    const type = col.colOptions?.type
-
-    if (['oo', 'bt'].includes(type)) {
-      return col.meta?.singular
+  // Extract the actual ID value from the relational field
+  // It could be an object or a string
+  const getValueId = (val: unknown): string => {
+    if (!val) return ''
+    if (typeof val === 'string') return val
+    if (typeof val === 'object' && val !== null) {
+      // If it's an object, try to get the id property
+      const obj = val as Record<string, unknown>
+      return String(obj.id || Object.values(obj)[0] || '')
     }
-
-    if (['hm', 'mm'].includes(type)) {
-      return col.meta?.plural
-    }
-
-    return null
+    return String(val)
   }
+
+  const valueId = getValueId(value)
+  console.log(valueId)
 
   useEffect(() => {
     const fetchRelatedData = async () => {
       try {
         setIsLoading(true)
         setError(null)
-        console.log('[RelationalSelect] Fetching related data for column:', JSON.stringify(column))
-        console.log('[RelationalSelect] Column options:', JSON.stringify(column.colOptions))
 
         // Get relational model ID and base ID from column options
-        const relatedModelId = column.colOptions?.fk_related_model_id
+        const relatedModelId = column.colOptions.fk_related_model_id
         const baseId = column.base_id
 
-        if (!relatedModelId || !baseId) {
-          console.warn('Missing relational field configuration:', {
-            relatedModelId,
-            baseId,
-            column,
-          })
-          setError('Related model not properly configured')
-          return
-        }
-
-        console.log('[RelationalSelect] Fetching related rows:', {
-          baseId,
-          relatedModelId,
-        })
-
         // Fetch related records
-        const rows = await NocoDBService.getRelatedRecords(baseId, relatedModelId)
+        const rows = await NocoDBService.getRelatedRecords(relatedModelId)
 
         // Transform rows to { id, title } format
         // Try to find a suitable display column (name, title, etc.)
@@ -356,6 +340,7 @@ function RelationalSelectField({
           const id = row.id || row.Id || Object.values(row)[0]
           // Try common display column names
           const title =
+            (row.note as string) ||
             (row.name as string) ||
             (row.title as string) ||
             (row.Name as string) ||
@@ -380,18 +365,19 @@ function RelationalSelectField({
     if (column.uidt === 'LinkToAnotherRecord') {
       fetchRelatedData()
     }
-  }, [column])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [column.id])
 
   return (
     <div className="space-y-2">
-      <Select value={value || ''} onValueChange={onChange} disabled={isLoading}>
-        <SelectTrigger>
+      <Select value={valueId} onValueChange={onChange} disabled={isLoading}>
+        <SelectTrigger className="w-full">
           <SelectValue placeholder={isLoading ? 'Loading...' : placeholder} />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="w-full">
           {relatedRows.length > 0 ? (
             relatedRows.map((row) => (
-              <SelectItem key={row.id} value={String(row.id)}>
+              <SelectItem key={row.id} value={String(row.id)} className="min-w-[150px]">
                 {row.title}
               </SelectItem>
             ))

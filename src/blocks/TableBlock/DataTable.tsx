@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState } from 'react'
 import { NocoDBColumn, NocoDBRow } from '@/services/nocodb'
@@ -21,13 +21,12 @@ export function DataTable({ source, columns, initialRows }: DataTableProps) {
 
   // Get primary key column
   const pkColumn = columns.find((col) => col.pk)
-  
+
   // Helper to extract row ID - tries both column_name and title
   const getRowId = (row: NocoDBRow) => {
     if (!pkColumn) return row['id'] || row['Id']
     return row[pkColumn.column_name] ?? row[pkColumn.title] ?? row['id'] ?? row['Id']
   }
-
   // Use custom hook for data operations
   const {
     rows,
@@ -48,10 +47,10 @@ export function DataTable({ source, columns, initialRows }: DataTableProps) {
   const handleUpdate = async (data: Record<string, unknown>) => {
     if (!editRow) return
     const rowId = getRowId(editRow)
-    
+
     // Remove ID and timestamp fields from data (they shouldn't be updated)
     const { id: _id, Id: _Id, CreatedAt: _ca, UpdatedAt: _ua, ...updateData } = data
-    
+
     await updateRecord(rowId, updateData)
     setEditRow(null)
   }
@@ -69,17 +68,10 @@ export function DataTable({ source, columns, initialRows }: DataTableProps) {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <TableToolbar
-        onAdd={() => setIsCreateOpen(true)}
-      />
+      <TableToolbar onAdd={() => setIsCreateOpen(true)} />
 
       {/* Table */}
-      <DataTableView
-        columns={columns}
-        rows={rows}
-        onEdit={setEditRow}
-        onDelete={setDeleteRow}
-      />
+      <DataTableView columns={columns} rows={rows} onEdit={setEditRow} onDelete={setDeleteRow} />
 
       {/* Create Dialog */}
       <DynamicForm
